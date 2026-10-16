@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from dotenv import load_dotenv
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -29,6 +30,24 @@ class Baggage(db.Model):
     passenger_name = db.Column(db.String(100), nullable=False)
     flight_no = db.Column(db.String(20), nullable=False)
     current_status = db.Column(db.String(20), nullable=False, default="Checked in")
+
+
+class ScanEvent(db.Model):
+    __tablename__ = "scan_event"
+    scan_id = db.Column(db.Integer, primary_key=True)
+    baggage_id = db.Column(db.Integer, db.ForeignKey("baggage.baggage_id"), nullable=False)
+    checkpoint = db.Column(db.String(30), nullable=False)
+    status = db.Column(db.String(20), nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now)
+
+
+class AuditLog(db.Model):
+    __tablename__ ="audit_log"
+    audit_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=True)
+    action = db.Column(db.String(40), nullable=False)
+    record_id = db.Column(db.String(64), nullable=True)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now)        
 
 
 @app.route("/")
