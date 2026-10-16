@@ -1,7 +1,8 @@
 import os
 from datetime import datetime
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, render_template, request, redirect, url_for, session,flash
+from werkzeug.security import check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 
@@ -53,6 +54,21 @@ class AuditLog(db.Model):
 @app.route("/")
 def home():
     return "Digital Baggage Tracking System is running"
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        user = User.query.filter_by(username=username).first()
+        if user and check_password_hash(user.password_hash, password):
+            session.clear()
+            session["user_id"] = user.user_id
+            session["name"] = user.name
+            return "Login successful. Welcome, " + user.name
+        flash("Invalid username or password.")
+    return render_template("login.html")    
 
 
 @app.route("/dbtest")
