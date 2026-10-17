@@ -48,7 +48,21 @@ class AuditLog(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=True)
     action = db.Column(db.String(40), nullable=False)
     record_id = db.Column(db.String(64), nullable=True)
-    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now)        
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now)  
+
+
+    
+STATUS_FLOW = ["checked in", "Screened", "Arrived", "Collected"]
+CHECKPOINT_STATUS = {
+        "Check-in": "Checked in",
+        "Security": "Screened",
+        "Loading": "Loaded",
+        "Arrival": "Arrived",
+        "Collection": "Collected",
+    } 
+def audit(action, record_id=None):
+    db.session.add(AuditLog(user_id=session.get("user_id"), action=action, record_id=record_id))
+    db.session.commit()
 
 
 @app.route("/")
@@ -107,7 +121,25 @@ def register():
             flash("Baggage" + reference_no + "registered.")
             return redirect(url_for("register"))            
     return render_template("register.html")
-     
+
+
+@app.route("/scan", methods=["GET", "POST"])
+def scan():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    if request.method == "POST":
+        tag_id = request.form.get("tag_id", "").strip()
+        checkpoint = request.form.get("checkpoint", "")
+        if not tag_id or checkpoint not in CHECKPOINT_STATUS:
+            flash("Enter a tag ID and choose a checkpoint")
+        else:
+            bag = Baggage.query.filter_by(rfid_tag_id=tag_id).first()
+            if bag is None:
+                audit("UNKNOWN_TAG_SCAN", tag_id)
+                flash("FLAGGED: unknown or unregistered tag" + tag_id)
+            else:
+                flash("Tag found: bag" + bag.reference_no + "(" + bag.passenger_name +" ), current status: " + bag.current_status)
+    return render_template("scan.html", checkpoints=list(CHECKPOINT_STATUS))            
 
 
 @app.route("/dbtest")

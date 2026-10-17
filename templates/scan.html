@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RFID Scan</title>
+</head>
+<body>
+    <h2>Simulated RFID Scan</h2>
+
+    {% with messages = get_flashed_messages()%}
+    {% for message in messages %}
+    <p>{{ message }}</p>
+    {% endfor %}
+    {% endwith %}
+
+    <form method="POST">
+        <label for="checkpoint">Checkpoint</label><br>
+        <select name="checkpoint" id="checkpoint">
+            {% for c in checkpoints %}
+            <option value="{{ c }}">{{ c }}</option>
+            {% endfor %}
+        </select><br>
+        <label for="tag_id">RFID tag_id</label><br>
+        <input type="text" id="tag_id" name="tag_id" required><br><br>
+        <button type="submit">SCAN</button>
+    </form>
+    <p><a href="{{ url_for('dashboard') }}">Back to Dashboard</a></p>
+</body>
+</html>
