@@ -82,6 +82,31 @@ def dashboard():
 def logout():
     session.clear()
     return redirect(url_for("login"))
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    if request.method == "POST":
+        reference_no = request.form.get("reference_no", "").strip()
+        passenger_name = request.form.get("passenger_name", "").strip()
+        flight_no = request.form.get("flight_no", "").strip()
+        rfid_tag_id = request.form.get("rfid_tag_id", "").strip()
+
+        if not all([reference_no, passenger_name, flight_no, rfid_tag_id]):
+            flash("All fields are required.")
+        elif Baggage.query.filter_by(reference_no=reference_no).first():
+            flash("That baggage reference number already exists.")
+        elif Baggage.query.filter_by(rfid_tag_id=rfid_tag_id).first():
+            flash("That RFID tag is already assigned to another bag.")
+        else:
+            bag = Baggage(reference_no=reference_no, passenger_name=passenger_name, flight_no=flight_no, rfid_tag_id=rfid_tag_id)
+            db.session.add(bag)
+            db.session.commit()
+            flash("Baggage" + reference_no + "registered.")
+            return redirect(url_for("register"))            
+    return render_template("register.html")
      
 
 
