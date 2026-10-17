@@ -66,9 +66,23 @@ def login():
             session.clear()
             session["user_id"] = user.user_id
             session["name"] = user.name
-            return "Login successful. Welcome, " + user.name
+            return redirect(url_for("dashboard"))
         flash("Invalid username or password.")
     return render_template("login.html")    
+
+
+@app.route("/dashboard")
+def dashboard():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    return render_template("dashboard.html", name=session["name"])
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+     
 
 
 @app.route("/dbtest")
