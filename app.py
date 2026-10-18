@@ -51,15 +51,17 @@ class AuditLog(db.Model):
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now)  
 
 
-    
-STATUS_FLOW = ["checked in", "Screened", "Arrived", "Collected"]
+
+STATUS_FLOW = ["Checked in", "Screened", "Loaded", "Arrived", "Collected"]
 CHECKPOINT_STATUS = {
-        "Check-in": "Checked in",
-        "Security": "Screened",
-        "Loading": "Loaded",
-        "Arrival": "Arrived",
-        "Collection": "Collected",
-    } 
+    "Check-in": "Checked in",
+    "Security": "Screened",
+    "Loading": "Loaded",
+    "Arrival": "Arrived",
+    "Collection": "Collected",
+}
+
+
 def audit(action, record_id=None):
     db.session.add(AuditLog(user_id=session.get("user_id"), action=action, record_id=record_id))
     db.session.commit()
@@ -138,7 +140,25 @@ def scan():
                 audit("UNKNOWN_TAG_SCAN", tag_id)
                 flash("FLAGGED: unknown or unregistered tag" + tag_id)
             else:
-                flash("Tag found: bag" + bag.reference_no + "(" + bag.passenger_name +" ), current status: " + bag.current_status)
+                new_status = CHECKPOINT_STATUS[checkpoint]
+                current = STATUS_FLOW.index(bag.current_status)
+                new = STATUS_FLOW.index(new_status)
+                reason = None
+                if new == current:
+                    reason = "duplicate scan, the bag is already '" + bag.current_status + "'"
+                elif new < current:
+                    reason = "out of sequence, the bag is already '" + bag.current_status + "'"
+                elif new > current + 1:
+                    reason = "a stage was skipped, expected '" + STATUS_FLOW[current + 1] + "' next"
+                if reason:
+                    audit("SCAN_FLAGGED", bag.reference_no)
+                    flash("FLAGGED:" + reason)
+                else:
+                    db.session.add(ScanEvent(baggage_id=bag.baggage_id, checkpoint=checkpoint, status=new_status))
+                    bag.current_status = new_status
+                    db.session.commit()
+                    audit("SCAN_SUCCESS", bag.reference_no)
+                    flash("Accepted: bag" + bag.reference_no + "is now '" + new_status + "'")                 
     return render_template("scan.html", checkpoints=list(CHECKPOINT_STATUS))            
 
 
