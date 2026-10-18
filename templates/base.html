@@ -7,26 +7,38 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     
 </head>
-<body>
+<body class="{% if not session.get('user_id') %}auth-body{% endif %}">
+<div class="app">
     {% if session.get('user_id') %}
-    <nav>
-        <a href="{{ url_for('dashboard') }}">Dashboard</a>
-        <a href="{{ url_for('register') }}">Register</a>
-        <a href="{{ url_for('scan') }}">Scan</a>
-    </nav>
+        <aside class="sidebar">
+            <div class="brand">Baggage<span>Track</span></div>
+    
+            <nav>
+            <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">Dashboard</a>
+            <a href="{{ url_for('register') }}" class="{{ 'active' if request.endpoint == 'register' }}">Register Baggage</a>
+            <a href="{{ url_for('scan') }}" class="{{ 'active' if request.endpoint == 'scan' }}">RFID Scan</a>
+        </nav>
+        <div class="user-box">
+            <p>Hello, {{ session.get('name') }}!</p>
+            <form method="POST" action="{{ url_for('logout') }}">
+                <button type="submit" class="btn-ghost">Logout</button>
+            </form>
+        </div>
+        </aside>
     {% endif %}
-    <main class="container">
+
+    
+    <main class="main">
         {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="flash-list">
-                    {% for message in messages %}
-                        <p class="flash-message">{{ message }}</p>
-                    {% endfor %}
+            {% for message in messages %}
+                <div class="flash">
+                    {{ message }}
                 </div>
-            {% endif %}
+            {% endfor %}
         {% endwith %}
 
         {% block content %}{% endblock %}
     </main>
+</div>    
 </body>
 </html>
