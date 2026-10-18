@@ -1,0 +1,61 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: #f5f7fb;
+    color: #1f2937;
+}
+
+.container {
+    max-width: 720px;
+    margin: 40px auto;
+    padding: 24px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.flash-list {
+    margin-bottom: 20px;
+}
+
+.flash-message {
+    background: #eef5ff;
+    border-left: 4px solid #2563eb;
+    padding: 10px 12px;
+    margin: 8px 0;
+    border-radius: 4px;
+}
+
+nav {
+    background: #111827;
+    padding: 12px 24px;
+    color: #fff;
+}
+
+nav a {
+    color: #fff;
+    text-decoration: none;
+    margin-right: 16px;
+}
+
+main form {
+    display: grid;
+    gap: 10px;
+}
+
+input, select, button {
+    padding: 10px 12px;
+    font-size: 1rem;
+}
+
+button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+a {
+    color: #2563eb;
+}

@@ -1,30 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Baggage Registration</title>
-</head>
-<body>
-    <h2>Register New Bagagge</h2>
-    {% with messages = get_flashed_messages() %}
-    {% for message in messages %}
-    <p>{{ message}}</p>
-    {% endfor %}
-    {% endwith %}
+{% extends "base.html" %}
+
+{% block title %}Baggage Registration{% endblock %}
+
+{% block content %}
+    <h2>Register New Baggage</h2>
 
     <form method="POST">
-        <label for="reference_no">Baggage reference no.</label><br>
-        <input type="text" id="reference_no" name="reference_no" required><br>
-        <label for="passenger_name">Passenger name</label><br>
-        <input type="text" id="passenger_name" name="passenger_name" required><br>
-        <label for="flight_no">Flight no.</label><br>
-        <input type="text" id="flight_no" name="flight_no" required><br>
-        <label for="rfid_tag_id">RFID tag ID</label><br>
-        <input type="text" id="rfid_tag_id" name="rfid_tag_id" required><br><br>
+        <label for="reference_no">Baggage reference no.</label>
+        <input type="text" id="reference_no" name="reference_no" required>
+
+        <label for="passenger_name">Passenger name</label>
+        <input type="text" id="passenger_name" name="passenger_name" required>
+
+        <label for="flight_no">Flight no.</label>
+        <input type="text" id="flight_no" name="flight_no" required>
+
+        <label for="rfid_tag_id">RFID tag ID</label>
+        <input type="text" id="rfid_tag_id" name="rfid_tag_id" required>
+
         <button type="submit">SAVE</button>
     </form>
 
-    <p><a href="{{ url_for('dashboard') }}">Back to dashboard</a></p>
-</body>
-</html>
+    
+{% endblock %}
