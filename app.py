@@ -69,7 +69,9 @@ def audit(action, record_id=None):
 
 @app.route("/")
 def home():
-    return "Digital Baggage Tracking System is running"
+   if "user_id" in session:
+       return redirect(url_for("dashboard"))
+   return redirect(url_for("login"))
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -91,7 +93,42 @@ def login():
 def dashboard():
     if "user_id" not in session:
         return redirect(url_for("login"))
-    return render_template("dashboard.html", name=session["name"])
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    flagged_actions = ["SCAN_FLAGGED", "UNKNOWN_TAG_SCAN"]
+
+    total_bags = Baggage.query.count()
+    collected = Baggage.query.filter_by(current_status="Collected").count()
+    scans_today = ScanEvent.query.filter(ScanEvent.timestamp >= today).count()
+    flagged_today = AuditLog.query.filter(AuditLog.action.in_(flagged_actions), AuditLog.timestamp >= today).count()
+    recent = (
+        db.session.query(ScanEvent, Baggage)
+        .join(Baggage, ScanEvent.baggage_id == Baggage.baggage_id)
+        .order_by(ScanEvent.timestamp.desc(), ScanEvent.scan_id.desc())
+        .limit(8)
+        .all()
+    )
+
+    flagged_events = (
+        AuditLog.query.filter(AuditLog.action.in_(flagged_actions))
+        .order_by(AuditLog.timestamp.desc())
+        .limit(5)
+        .all()
+    )
+
+    chart_labels = list(CHECKPOINT_STATUS)
+    chart_values = [ScanEvent.query.filter_by(checkpoint=checkpoint).count() for checkpoint in chart_labels]
+    return render_template(
+        "dashboard.html",
+        name=session["name"],
+        total_bags=total_bags,
+        collected=collected,
+        scans_today=scans_today,
+        flagged_today=flagged_today,
+        recent=recent,
+        flagged_events=flagged_events,
+        chart_labels=chart_labels,
+        chart_values=chart_values
+    )
 
 
 @app.route("/logout", methods=["POST"])
@@ -162,7 +199,3 @@ def scan():
     return render_template("scan.html", checkpoints=list(CHECKPOINT_STATUS))            
 
 
-@app.route("/dbtest")
-def dbtest():
-    tables = db.session.execute(text("SHOW TABLES")).fetchall()
-    return "Connected to MySQL. Tables: " + ", ".join(t[0] for t in tables)

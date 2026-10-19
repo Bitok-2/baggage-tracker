@@ -192,5 +192,108 @@ button:hover {
 .btn-ghost:hover {
     background: rgba(255, 255, 255, 0.18);
 }
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-label {
+    margin: 0 0 6px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.stat-num {
+    margin: 0;
+    font-size: 2.2rem;
+    font-weight: 700;
+}
+
+.stat.warn {
+    border-top: 4px solid var(--amber);
+}
+
+.stat.warn .stat-num {
+    color: var(--amber);
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+}
+
+.section-title {
+    font-size: 1.05rem;
+    margin: 0 0 14px;
+}
+
+.muted {
+    color: var(--muted);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+
+th {
+    padding: 8px 10px;
+    border-bottom: 2px solid var(--line);
+    color: var(--muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    text-align: left;
+    text-transform: uppercase;
+}
+
+td {
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--line);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.badge.checked-in { background: #e0ecff; color: #1d4ed8; }
+.badge.screened { background: #ede9fe; color: #6d28d9; }
+.badge.loaded { background: #fef3c7; color: #b45309; }
+.badge.arrived { background: #ccfbf1; color: #0f766e; }
+.badge.collected { background: #dcfce7; color: #15803d; }
+
+.flag-item {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+    padding: 8px 0 8px 12px;
+    border-left: 4px solid var(--amber);
+}
+
+.flag-item .muted {
+    font-size: 0.85rem;
+}
+
+.chart-card {
+    margin-top: 24px;
+}
+
+.chart-box {
+    position: relative;
+    height: 280px;
+}
+
+
     
 

@@ -3,9 +3,11 @@
 {% block title %}RFID Scan{% endblock %}
 
 {% block content %}
-    <h2>Simulated RFID Scan</h2>
+    <h2 class="page-title">RFID Scan</h2>
+    <p class="subtitle">Scan an RFID tag at the selected checkpoint</p>
 
-    <form method="POST">
+  <div class="card">
+      <form method="POST">
         <label for="checkpoint">Checkpoint</label>
         <select name="checkpoint" id="checkpoint">
             {% for c in checkpoints %}
@@ -18,5 +20,6 @@
 
         <button type="submit">SCAN</button>
     </form>
+  </div>
     
 {% endblock %}

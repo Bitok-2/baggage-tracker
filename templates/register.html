@@ -3,9 +3,10 @@
 {% block title %}Baggage Registration{% endblock %}
 
 {% block content %}
-    <h2>Register New Baggage</h2>
-
-    <form method="POST">
+    <h2 class="page-title">Register New Baggage</h2>
+    <p class="subtitle">Fill in the details below to register a new baggage</p>
+   <div class="card">
+     <form method="POST">
         <label for="reference_no">Baggage reference no.</label>
         <input type="text" id="reference_no" name="reference_no" required>
 
@@ -20,6 +21,7 @@
 
         <button type="submit">SAVE</button>
     </form>
+   </div>
 
     
 {% endblock %}
