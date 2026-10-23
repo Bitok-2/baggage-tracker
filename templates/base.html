@@ -5,23 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Digital Baggage Tracking System{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logo.svg') }}">
 </head>
 <body class="{% if not session.get('user_id') %}auth-body{% endif %}">
 <div class="app">
     {% if session.get('user_id') %}
         <aside class="sidebar">
-            <div class="brand">Baggage<span>Track</span></div>
+            <div class="brand">
+                <img src="{{ url_for('static', filename='logo.svg') }}" alt="BaggageTrack logo">
+                <div>Baggage<span>Track</span></div>
+            
+            </div>
     
             <nav>
-            <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">Dashboard</a>
-            <a href="{{ url_for('register') }}" class="{{ 'active' if request.endpoint == 'register' }}">Register Baggage</a>
-            <a href="{{ url_for('scan') }}" class="{{ 'active' if request.endpoint == 'scan' }}">RFID Scan</a>
+            <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">
+            <span class="icon" style="--icon: url('{{ url_for('static', filename='icons/dashboard.svg') }}')"></span>Dashboard</a>
+            <a href="{{ url_for('register') }}" class="{{ 'active' if request.endpoint == 'register' }}">
+                <span class="icon" style="--icon: url('{{ url_for('static', filename='icons/luggage.svg') }}')"></span>Register Baggage
+            </a>
+            <a href="{{ url_for('scan') }}" class="{{ 'active' if request.endpoint == 'scan' }}">
+                <span class="icon" style="--icon: url('{{ url_for('static', filename='icons/scan.svg') }}')"></span>RFID Scan
+            </a>
         </nav>
         <div class="user-box">
             <p>Hello, {{ session.get('name') }}!</p>
             <form method="POST" action="{{ url_for('logout') }}">
-                <button type="submit" class="btn-ghost">Logout</button>
+                <button type="submit" class="btn-ghost">
+                    <span class="icon" style="--icon: url('{{ url_for('static', filename='icons/logout.svg') }}')"></span>LOGOUT
+                </button>
             </form>
         </div>
         </aside>

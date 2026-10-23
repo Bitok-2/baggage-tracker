@@ -1,19 +1,64 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logo.svg') }}">
+</head>
+<body>
+    <div class="login-page">
+        <section class="login-hero">
+            <div class="hero-brand">
+                <img src="{{ url_for('static', filename='logo.svg') }}" alt="BaggageTrack logo">
+                <div>Baggage<span>Track</span></div>
 
-{% block title %}Staff Login{% endblock %}
+            </div>
+            <div class="hero-text">
+                <h2>Every bag accounted for.</h2>
+                <p>Track baggage from check-in to collection with RFID verification and a full audit trail.</p>
 
-{% block content %}
-   <div class="card">
-     <h2 class="page-title">Authorized Staff Login</h2>
-    <p class="subtitle">Sign in to manage baggage tracking</p>
-    <form method="post">
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" required>
+            </div>
+            <div class="hero-points">
+                <div><span class="icon" style="--icon: url('{{ url_for('static', filename='icons/scan.svg') }}')"></span>RFID verified scans</div>
+                <div><span class="icon" style="--icon: url('{{ url_for('static', filename='icons/luggage.svg') }}')"></span>Every bag traceable</div>
+                <div><span class="icon" style="--icon: url('{{ url_for('static', filename='icons/plane.svg') }}')"></span>Built for airlines</div>
+                
 
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required>
+            </div>
 
-        <button type="submit">LOGIN</button>
-    </form>
-   </div>
-{% endblock %}
+        </section>
+
+        <section class="login-panel">
+            <main class="login-box">
+                {% with messages = get_flashed_messages() %}
+                {% for message in messages %}
+                <div class="flash">{{ message }}</div>
+                {% endfor %}
+                {% endwith %}
+
+                <div class="card">
+                    <h2 class="page-title">Authorized Staff Login</h2>
+                    <p class="subtitle">Sign in to manage baggage tracking.</p>
+
+                    <form method="POST">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" required>
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                        <button type="submit">LOGIN</button>
+                    </form>
+
+                </div>
+
+                <p class="credit">Photo by Eric Prouzet on Unsplash</p>
+
+            </main>
+
+        </section>
+
+    </div>
+    
+</body>
+</html>
