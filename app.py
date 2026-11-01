@@ -1,10 +1,11 @@
 import os
 from datetime import datetime
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, redirect, url_for, session,flash
+from flask import Flask, render_template, request, redirect, url_for, session,flash,abort
 from werkzeug.security import check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
+from sqlalchemy import or_
 
 load_dotenv()
 
@@ -61,6 +62,21 @@ CHECKPOINT_STATUS = {
     "Collection": "Collected",
 }
 
+def next_checkpoint(status):
+    position = STATUS_FLOW.index(status)
+    if position + 1 >= len(STATUS_FLOW):
+        return None
+    next_status = STATUS_FLOW[position + 1]
+    for checkpoint, s in CHECKPOINT_STATUS.items():
+        if s == next_status:
+            return checkpoint
+
+def next_hint(status):
+    checkpoint = next_checkpoint(status)
+    if checkpoint is None:
+        return "The journey is complete" 
+    return "Next expected checkpoint: " + checkpoint + "."     
+
 
 def audit(action, record_id=None):
     db.session.add(AuditLog(user_id=session.get("user_id"), action=action, record_id=record_id))
@@ -96,6 +112,23 @@ def dashboard():
     today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     flagged_actions = ["SCAN_FLAGGED", "UNKNOWN_TAG_SCAN"]
 
+    q = request.args.get("q", "").strip()
+    results = []
+    if q:
+        pattern = "%" + q + "%"
+        results = (
+            Baggage.query.filter(
+                or_(
+                    Baggage.reference_no.ilike(pattern),
+                    Baggage.rfid_tag_id.ilike(pattern),
+                    Baggage.passenger_name.ilike(pattern),
+                )
+            )
+            .order_by(Baggage.baggage_id.desc())
+            .limit(20)
+            .all()
+        )
+
     total_bags = Baggage.query.count()
     collected = Baggage.query.filter_by(current_status="Collected").count()
     scans_today = ScanEvent.query.filter(ScanEvent.timestamp >= today).count()
@@ -127,7 +160,9 @@ def dashboard():
         recent=recent,
         flagged_events=flagged_events,
         chart_labels=chart_labels,
-        chart_values=chart_values
+        chart_values=chart_values,
+        q=q,
+        results=results,
     )
 
 
@@ -189,13 +224,62 @@ def scan():
                     reason = "a stage was skipped, expected '" + STATUS_FLOW[current + 1] + "' next"
                 if reason:
                     audit("SCAN_FLAGGED", bag.reference_no)
-                    flash("FLAGGED:" + reason)
+                    flash("FLAGGED:" + reason + "." + next_hint(bag.current_status))
                 else:
                     db.session.add(ScanEvent(baggage_id=bag.baggage_id, checkpoint=checkpoint, status=new_status))
                     bag.current_status = new_status
                     db.session.commit()
                     audit("SCAN_SUCCESS", bag.reference_no)
-                    flash("Accepted: bag" + bag.reference_no + "is now '" + new_status + "'")                 
-    return render_template("scan.html", checkpoints=list(CHECKPOINT_STATUS))            
+                    flash("Accepted: bag" + bag.reference_no + "(" + bag.passenger_name +") is now '" + new_status + "'." + next_hint(new_status)) 
+        return redirect(url_for("scan"))                            
+    return render_template("scan.html", checkpoints=list(CHECKPOINT_STATUS))    
 
+def handle_scan(tag_id, checkpoint):
+        bag = Baggage.query.filter_by(rfid_tag_id=tag_id).first()
+        if bag is None:
+            audit("UNKNOWN_TAG_SCAN", tag_id)
+            return "flagged", "FLAGGGED: unknown or unregistered tag " + tag_id, None
+        new_status = CHECKPOINT_STATUS[checkpoint]
+        current = STATUS_FLOW.index(bag.current_status)
+        new = STATUS_FLOW.index(new_status)
 
+        if new == current:
+            audit("SCAN_FLAGGED", bag.reference_no)
+            return "flagged", ("FLAGGED: duplicate scan, bag " + bag.reference_no + " is already '" + bag.current_status + "'.", + next_hint(bag.current_status)), bag
+
+        if new < current:
+            audit("SCAN_FLAGGED", bag.reference_no)
+            return "flagged", ("FLAGGED: out of sequence, bag " + bag.reference_no + " is already '" + bag.current_status + "'.", + next_hint(bag.current_status)), bag
+
+        if new > current + 1:
+            audit("SCAN_FLAGGED", bag.reference_no)
+            missed = next_checkpoint(bag.current_status)
+            return "skipped", ("FLAGGED: bag " + bag.reference_no + " skipped a stage, expected " + missed + " station. Scan it there first."), bag  
+
+        db.session.add(ScanEvent(baggage_id=bag.baggage_id, checkpoint=checkpoint, status=new_status))
+        bag.current_status = new_status
+        db.session.commit()
+        audit("SCAN_SUCCESS", bag.reference_no)
+        return "accepted", ("Accepted: bag " + bag.reference_no + " (" + bag.passenger_name + ") is now '" + new_status + "'. " + next_hint(new_status)), bag
+          
+
+@app.route("/scan/<station>", methods=["GET", "POST"])
+def scan_station(station):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    checkpoint = next((c for c in CHECKPOINT_STATUS if c.lower() == station.lower()), None)
+    if checkpoint is None:
+        abort(404)
+    if request.method == "POST":
+        tag_id = request.form.get("tag_id", "").strip()
+        if not tag_id:
+            flash("Enter a tag ID")
+        else:
+            outcome, message, bag = handle_scan(tag_id, checkpoint)
+            flash(message)
+            if outcome == "skipped":
+                missed = next_checkpoint(bag.current_status)
+                return redirect(url_for("scan_station", station=missed.lower(), tag=tag_id))
+        return redirect(url_for("scan_station", station=station))
+    return render_template("station.html", checkpoint=checkpoint, tag=request.args.get("tag", ""))

@@ -5,6 +5,65 @@
 {% block content %}
     <h2 class="page-title">Staff Dashboard</h2>
     <p class="subtitle">Welcome, {{ name }}</p>
+    <form method="GET" action="{{ url_for('dashboard') }}" class="search-form">
+        <input type="text" name="q" placeholder="Search scans..." value="{{ q }}">
+        <button type="submit">SEARCH</button>
+        {% if q %}<a href="{{ url_for('dashboard') }}" class="clear-link">Clear</a>{% endif %}
+    </form>
+
+    {% if q %}
+    {% set flow= ['Checked in', 'Screened', 'Loaded', 'Arrived', 'Collected'] %}
+    <div class="modal-backdrop" id="searchModal">
+        <div class="modal-card">
+            <button type="button" class="modal-close" id="closeModal" aria-label="Close">&times;</button>
+            <h3 class="section-title">Search results for "{{ q }}"</h3>
+            {% if results %}
+            {%for bag in results %}
+            {% set  pos = flow.index(bag.current_status) if bag.current_status in flow else 0 %}
+            <div class="bag-card">
+                <div class="bag-head">
+                    <strong>{{ bag.reference_no }}</strong>
+                    <span class="badge {{ bag.current_status|lower|replace(' ', '-') }}">{{ bag.current_status }}</span>
+                </div>
+                <p class="bag-meta">{{ bag.passenger_name }} &middot; Flight {{ bag.flight_no }} &middot; RFID Tag: {{ bag.rfid_tag_id }}</p>
+                <div class="journey">
+                    {% for s in flow %}
+                    <div class="step {{ 'done' if loop.index0 <= pos }}">
+                        <span class="dot"></span>{{ s }}
+                    </div>
+                    {% endfor %}
+
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p class="muted">No matching baggage found.</p>
+            {% endif %}
+        </div>
+    </div>
+    <script>
+        (function () {
+            var modal = document.getElementById("searchModal");
+            function closeModal() {
+                window.location.href = "{{ url_for('dashboard') }}";
+            }
+            document.getElementById("closeModal").addEventListener("click", closeModal);
+            modal.addEventListener("click", function (e) {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+            document.addEventListener("keydown", function (e) {
+                if (e.key === "Escape") {
+                    closeModal();
+                }
+            });
+        }
+    
+    )();
+    </script>
+    {% endif %}
+    
     <div class="stats">
 
         <div class="card stat">
