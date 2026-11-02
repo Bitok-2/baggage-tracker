@@ -23,7 +23,7 @@
             <a href="{{ url_for('register') }}" class="{{ 'active' if request.endpoint == 'register' }}">
                 <span class="icon" style="--icon: url('{{ url_for('static', filename='icons/luggage.svg') }}')"></span>Register Baggage
             </a>
-            <a href="{{ url_for('scan') }}" class="{{ 'active' if request.endpoint == 'scan' }}">
+            <a href="{{ url_for('scan') }}" class="{{ 'active' if request.endpoint in ['scan', 'scan_station'] }}">
                 <span class="icon" style="--icon: url('{{ url_for('static', filename='icons/scan.svg') }}')"></span>RFID Scan
             </a>
         </nav>

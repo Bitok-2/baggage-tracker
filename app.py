@@ -196,60 +196,29 @@ def register():
             return redirect(url_for("register"))            
     return render_template("register.html")
 
-
-@app.route("/scan", methods=["GET", "POST"])
+@app.route("/scan")
 def scan():
     if "user_id" not in session:
         return redirect(url_for("login"))
-    if request.method == "POST":
-        tag_id = request.form.get("tag_id", "").strip()
-        checkpoint = request.form.get("checkpoint", "")
-        if not tag_id or checkpoint not in CHECKPOINT_STATUS:
-            flash("Enter a tag ID and choose a checkpoint")
-        else:
-            bag = Baggage.query.filter_by(rfid_tag_id=tag_id).first()
-            if bag is None:
-                audit("UNKNOWN_TAG_SCAN", tag_id)
-                flash("FLAGGED: unknown or unregistered tag" + tag_id)
-            else:
-                new_status = CHECKPOINT_STATUS[checkpoint]
-                current = STATUS_FLOW.index(bag.current_status)
-                new = STATUS_FLOW.index(new_status)
-                reason = None
-                if new == current:
-                    reason = "duplicate scan, the bag is already '" + bag.current_status + "'"
-                elif new < current:
-                    reason = "out of sequence, the bag is already '" + bag.current_status + "'"
-                elif new > current + 1:
-                    reason = "a stage was skipped, expected '" + STATUS_FLOW[current + 1] + "' next"
-                if reason:
-                    audit("SCAN_FLAGGED", bag.reference_no)
-                    flash("FLAGGED:" + reason + "." + next_hint(bag.current_status))
-                else:
-                    db.session.add(ScanEvent(baggage_id=bag.baggage_id, checkpoint=checkpoint, status=new_status))
-                    bag.current_status = new_status
-                    db.session.commit()
-                    audit("SCAN_SUCCESS", bag.reference_no)
-                    flash("Accepted: bag" + bag.reference_no + "(" + bag.passenger_name +") is now '" + new_status + "'." + next_hint(new_status)) 
-        return redirect(url_for("scan"))                            
-    return render_template("scan.html", checkpoints=list(CHECKPOINT_STATUS))    
+    stations = [{"name": c, "slug": c.lower(), "status": s} for c, s in CHECKPOINT_STATUS.items()]
+    return render_template("scan.html", stations=stations)
 
 def handle_scan(tag_id, checkpoint):
         bag = Baggage.query.filter_by(rfid_tag_id=tag_id).first()
         if bag is None:
             audit("UNKNOWN_TAG_SCAN", tag_id)
-            return "flagged", "FLAGGGED: unknown or unregistered tag " + tag_id, None
+            return "flagged", "FLAGGED: unknown or unregistered tag " + tag_id, None
         new_status = CHECKPOINT_STATUS[checkpoint]
         current = STATUS_FLOW.index(bag.current_status)
         new = STATUS_FLOW.index(new_status)
 
         if new == current:
             audit("SCAN_FLAGGED", bag.reference_no)
-            return "flagged", ("FLAGGED: duplicate scan, bag " + bag.reference_no + " is already '" + bag.current_status + "'.", + next_hint(bag.current_status)), bag
+            return "flagged", ("FLAGGED: duplicate scan, bag " + bag.reference_no + " is already '" + bag.current_status + "'. " + next_hint(bag.current_status)), bag
 
         if new < current:
             audit("SCAN_FLAGGED", bag.reference_no)
-            return "flagged", ("FLAGGED: out of sequence, bag " + bag.reference_no + " is already '" + bag.current_status + "'.", + next_hint(bag.current_status)), bag
+            return "flagged", ("FLAGGED: out of sequence, bag " + bag.reference_no + " is already '" + bag.current_status + "'. " + next_hint(bag.current_status)), bag
 
         if new > current + 1:
             audit("SCAN_FLAGGED", bag.reference_no)
@@ -272,6 +241,7 @@ def scan_station(station):
     if checkpoint is None:
         abort(404)
     if request.method == "POST":
+        session["follow"] = bool(request.form.get("follow"))
         tag_id = request.form.get("tag_id", "").strip()
         if not tag_id:
             flash("Enter a tag ID")
@@ -281,5 +251,10 @@ def scan_station(station):
             if outcome == "skipped":
                 missed = next_checkpoint(bag.current_status)
                 return redirect(url_for("scan_station", station=missed.lower(), tag=tag_id))
+            if outcome == "accepted" and session.get("follow"):
+                upcoming = next_checkpoint(bag.current_status)
+                if upcoming:
+    
+                  return redirect(url_for("scan_station", station=upcoming.lower()))
         return redirect(url_for("scan_station", station=station))
-    return render_template("station.html", checkpoint=checkpoint, tag=request.args.get("tag", ""))
+    return render_template("station.html", checkpoint=checkpoint, tag=request.args.get("tag", ""), follow=session.get("follow", False))

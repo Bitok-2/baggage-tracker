@@ -1,26 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}RFID Scan{% endblock %}
+{% block title %}RFID Scan Stations{% endblock %}
 
 {% block content %}
-    <h2 class="page-title">RFID Scan</h2>
+    <h2 class="page-title">RFID Scan Stations</h2>
     <p class="subtitle">Scan an RFID tag at the selected checkpoint</p>
 
-  <div class="card">
-    
-      <form method="POST">
-        <label for="checkpoint">Checkpoint</label>
-        <select name="checkpoint" id="checkpoint">
-            {% for c in checkpoints %}
-            <option value="{{ c }}">{{ c }}</option>
-            {% endfor %}
-        </select>
-
-        <label for="tag_id">RFID tag ID</label>
-        <input type="text" id="tag_id" name="tag_id" required>
-
-        <button type="submit">SCAN</button>
-    </form>
-  </div>
-    
+<div class="stations">
+  {% for s in stations %}
+  <a class="station-card" href="{{ url_for('scan_station', station=s.slug)}}">
+    <span class="station-num">{{ loop.index }}</span>
+    <h3>{{ s.name }}</h3>
+    <p>Bag becomes <strong>{{ s.status }}</strong></p>
+  </a>
+  {% endfor %}
+</div>
 {% endblock %}
