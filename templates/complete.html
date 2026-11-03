@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Journey Complete{% endblock %}
+{% block content %}
+
+<div class="modal-backdrop">
+    <div class="modal-card done-card">
+        <div class="done-icon">&#10003;</div>
+        <h3 class="section-title">Journey Complete</h3>
+        <p class="muted">Bag {{ bag.reference_no }} has been collected.</p>
+        <p class="bag-meta">{{ bag.passenger_name }} &middot; Flight {{ bag.flight_no }} &middot; Tag {{ bag.rfid_tag_id }}</p>
+
+        <div class="journey">
+            {% for s in ['Checked in', 'Screened', 'Loaded', 'Arrived', 'Collected'] %}
+            <div class="step done"><span class="dot"></span>{{ s }}</div>
+            {% endfor %}
+        </div>
+
+        <p class="muted">Returning to the stations in <span id="count">5</span> seconds.</p>
+        <a class="done-btn" href="{{ url_for('scan') }}">Back to stations now</a>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var left = 5;
+        var el = document.getElementById("count");
+        var timer = setInterval(function () {
+            left -= 1;
+            el.textContent = left;
+            if (left <= 0) {
+                clearInterval(timer);
+                window.location.href = "{{ url_for('scan') }}";
+            }
+        }, 1000);
+    })();
+</script>
+
+{% endblock %}
+

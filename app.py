@@ -247,6 +247,8 @@ def scan_station(station):
             flash("Enter a tag ID")
         else:
             outcome, message, bag = handle_scan(tag_id, checkpoint)
+            if outcome == "accepted" and bag.current_status == "Collected":
+                return redirect(url_for("scan_complete", reference=bag.reference_no))
             flash(message)
             if outcome == "skipped":
                 missed = next_checkpoint(bag.current_status)
@@ -258,3 +260,13 @@ def scan_station(station):
                   return redirect(url_for("scan_station", station=upcoming.lower()))
         return redirect(url_for("scan_station", station=station))
     return render_template("station.html", checkpoint=checkpoint, tag=request.args.get("tag", ""), follow=session.get("follow", False))
+
+
+@app.route("/scan/complete/<reference>")
+def scan_complete(reference):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    bag = Baggage.query.filter_by(reference_no=reference).first_or_404()
+    if bag.current_status != "Collected":
+        return redirect(url_for("scan"))
+    return render_template("complete.html", bag=bag)

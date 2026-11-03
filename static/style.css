@@ -573,3 +573,39 @@ label.check input {
     font-weight: 700;
 }
 
+.done-card {
+    text-align: center;
+}
+
+.done-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 12px;
+    border-radius: 50%;
+    background: rgba(20, 184, 166, 0.15);
+    color: var(--teal-dark);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 64px;
+}
+
+.done-card .journrey {
+    margin: 18px 0;
+
+}
+
+.done-btn {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 12px 18px;
+    border-radius: 10px;
+    background: var(--teal);
+    color: #ffffff;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.done-btn:hover {
+    background: var(--teal-dark);
+}
+
