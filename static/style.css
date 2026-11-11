@@ -609,3 +609,7 @@ label.check input {
     background: var(--teal-dark);
 }
 
+.result-card {
+    margin-top: 16px;
+}
+

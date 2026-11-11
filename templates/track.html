@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Track Your Baggage{% endblock %}
+{% block content %}
+
+<div class="card">
+    <h2 class="page-title">Track Your Baggage</h2>
+    <p class="subtitle">Enter the reference number on your baggage receipt</p>
+
+    <form method="POST">
+        <label for="reference_no">Baggage reference number</label>
+        <input type="text" id="reference_no" name="reference_no" autocomplete="off" required autofocus>
+        <button type="submit">TRACK</button>
+    </form>
+</div>
+
+{% if searched %}
+<div class="card result-card">
+    {% if bag %}
+    {% set flow = ['Checked in', 'Screened', 'Loaded', 'Arrived', 'Collected'] %}
+    {% set pos = flow.index(bag.current_status) if bag.current_status in flow else 0 %}
+    <div class="bag-head">
+        <strong>{{ bag.reference_no }}</strong>
+        <span class="badge {{ bag.current_status|lower|replace(' ', '-') }}">{{ bag.current_status }}</span>
+    </div>
+    <p class="bag-meta">
+        Flight {{ bag.flight_no }}
+        {% if last %}&middot; Last updated {{ last.timestamp.strftime('%d %b %H:%M') }}{% endif %}
+    </p>
+    <div class="journey">
+        {% for s in flow %}
+        <div class="step {{ 'done' if loop.index0 <= pos }}"><span class="dot"></span>{{ s }}</div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">No baggage found for that reference number. Please check and try again.</p>
+    {% endif %}
+</div>
+{% endif %}
+
+<p class="credit"><a href="{{ url_for('login') }}">Staff login</a></p>
+
+{% endblock %}

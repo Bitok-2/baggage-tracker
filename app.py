@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, session,fl
 from werkzeug.security import check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 
 load_dotenv()
 
@@ -270,3 +270,24 @@ def scan_complete(reference):
     if bag.current_status != "Collected":
         return redirect(url_for("scan"))
     return render_template("complete.html", bag=bag)
+
+
+@app.route("/track", methods=["GET", "POST"])
+def track():
+    bag = None
+    last = None
+    searched = False
+    if request.method == "POST":
+        searched = True
+        reference = request.form.get("reference_no", "").strip()
+        if reference:
+            bag = Baggage.query.filter(
+                func.lower(Baggage.reference_no) == reference.lower()
+            ).first()
+        if bag:
+            last = (
+                ScanEvent.query.filter_by(baggage_id=bag.baggage_id)
+                .order_by(ScanEvent.timestamp.desc())
+                .first()
+            )
+    return render_template("track.html", bag=bag, last=last, searched=searched)             
