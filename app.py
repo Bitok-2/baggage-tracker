@@ -1,7 +1,11 @@
 import os
-from datetime import datetime
+import secrets
+import hmac
+import csv
+import io
+from datetime import datetime,timedelta
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, redirect, url_for, session,flash,abort
+from flask import Flask, render_template, request, redirect, url_for, session,flash,abort, Response
 from werkzeug.security import check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
@@ -13,6 +17,25 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
 app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
 db = SQLAlchemy(app)
+
+
+def csrf_token():
+    if "csrf" not in session:
+        session["csrf"] = secrets.token_hex(16)
+    return session["csrf"]
+
+app.jinja_env.globals["csrf_token"] = csrf_token    
+
+
+@app.before_request
+def check_csrf():
+    if request.method == "POST":
+        sent = request.form.get("csrf_token", "")
+        expected = session.get("csrf", "")
+        if not expected or not hmac.compare_digest(sent.encode(), expected.encode()):
+            audit("CSRF_REJECTED", request.path[:64])
+            abort(400, "Invalid or missing form token. Go back, refresh the page and try again.")
+
 
 
 class User(db.Model):
@@ -75,7 +98,29 @@ def next_hint(status):
     checkpoint = next_checkpoint(status)
     if checkpoint is None:
         return "The journey is complete" 
-    return "Next expected checkpoint: " + checkpoint + "."     
+    return "Next expected checkpoint: " + checkpoint + "."  
+
+
+def parse_date(text):
+    try:
+        return datetime.strptime(text, "%Y-%m-%d")
+    except ValueError:
+        return None
+
+
+def report_query(date_from, date_to, checkpoint, status):
+    query= db.session.query(ScanEvent, Baggage).join(
+        Baggage, ScanEvent.baggage_id == Baggage.baggage_id
+    )
+    if date_from:
+        query= query.filter(ScanEvent.timestamp >= date_from)
+    if date_to:
+        query= query.filter(ScanEvent.timestamp < date_to + timedelta(days=1))
+    if checkpoint:
+        query= query.filter(ScanEvent.checkpoint == checkpoint)
+    if status:
+        query= query.filter(ScanEvent.status == status)
+    return query.order_by(ScanEvent.timestamp.desc())                    
 
 
 def audit(action, record_id=None):
@@ -100,7 +145,9 @@ def login():
             session.clear()
             session["user_id"] = user.user_id
             session["name"] = user.name
+            audit("LOGIN_SUCCESS", username)
             return redirect(url_for("dashboard"))
+        audit("LOGIN_FAILED", username[:64] or None)
         flash("Invalid username or password.")
     return render_template("login.html")    
 
@@ -168,6 +215,7 @@ def dashboard():
 
 @app.route("/logout", methods=["POST"])
 def logout():
+    audit("LOGOUT")
     session.clear()
     return redirect(url_for("login"))
 
@@ -291,3 +339,77 @@ def track():
                 .first()
             )
     return render_template("track.html", bag=bag, last=last, searched=searched)             
+
+
+@app.route("/reports")
+def reports():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    date_from = parse_date(request.args.get("date_from", ""))
+    date_to = parse_date(request.args.get("date_to", ""))
+    checkpoint = request.args.get("checkpoint", "")
+    status = request.args.get("status", "")
+
+    query = report_query(date_from, date_to, checkpoint, status)
+    total = query.count()
+    rows = query.limit(200).all()
+
+    flagged = AuditLog.query.filter(
+        AuditLog.action.in_(["SCAN_FLAGGED", "UNKNOWN_TAG_SCAN"])
+    )
+    if date_from:
+        flagged = flagged.filter(AuditLog.timestamp >= date_from)
+    if date_to:
+        flagged = flagged.filter(AuditLog.timestamp < date_to + timedelta(days=1))
+
+    return render_template(
+        "reports.html",
+        rows=rows,
+        total=total,
+        flagged_count=flagged.count(),
+        checkpoints=list(CHECKPOINT_STATUS),
+        statuses=STATUS_FLOW,
+        f=request.args,
+
+    )        
+
+
+def safe_cell(value):
+    text = str(value)
+    if text[:1] in ("=", "+", "@"):
+        return "'" + text
+    return text
+
+
+@app.route("/reports/export")
+def reports_export():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    date_from = parse_date(request.args.get("date_from", ""))
+    date_to = parse_date(request.args.get("date_to", ""))
+    checkpoint = request.args.get("checkpoint", "")
+    status = request.args.get("status", "")
+
+    rows = report_query(date_from, date_to, checkpoint, status).all()
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(["Bag", "Passenger", "Flight", "Checkpoint", "Status", "Time"])
+    for scan, bag in rows:
+        writer.writerow([
+            safe_cell(bag.reference_no),
+            safe_cell(bag.passenger_name),
+            safe_cell(bag.flight_no),
+            scan.checkpoint,
+            scan.status,
+            scan.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+        ])
+
+    audit("REPORT_EXPORTED", str(len(rows)) + " rows")
+    return Response(
+        buffer.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=scan_report.csv"},
+    )    

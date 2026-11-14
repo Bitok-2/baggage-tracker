@@ -613,3 +613,44 @@ label.check input {
     margin-top: 16px;
 }
 
+main form.report-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    align-items: end;
+    max-width: none;
+    margin-bottom: 24px;
+
+}
+
+.report-filters div {
+    display: grid;
+    gap: 6px;
+}
+
+.section-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.section-row .section-title {
+    margin: 0;
+
+}
+
+.btn-export {
+    padding: 10px 16px;
+    border-radius: 10px;
+    background: var(--navy);
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.btn-export:hover {
+    background: var(--navy-2);
+}
+

@@ -26,14 +26,19 @@
             <a href="{{ url_for('scan') }}" class="{{ 'active' if request.endpoint in ['scan', 'scan_station'] }}">
                 <span class="icon" style="--icon: url('{{ url_for('static', filename='icons/scan.svg') }}')"></span>RFID Scan
             </a>
+            <a href="{{ url_for('reports') }}" class="{{ 'active' if request.endpoint == 'reports' }}">
+                <span class="icon" style="--icon: url('{{ url_for('static', filename='icons/reports.svg') }}')"></span>Reports
+            </a>
         </nav>
         <div class="user-box">
             <p>Hello, {{ session.get('name') }}!</p>
             <form method="POST" action="{{ url_for('logout') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn-ghost">
                     <span class="icon" style="--icon: url('{{ url_for('static', filename='icons/logout.svg') }}')"></span>LOGOUT
                 </button>
             </form>
+            
         </div>
         </aside>
     {% endif %}

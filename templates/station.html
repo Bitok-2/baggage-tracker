@@ -7,11 +7,13 @@
 
 <div class="card">
     <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label for="tag_id">RFID tag ID</label>
         <input type="text" id="tag_id" name="tag_id" value="{{ tag }}" autofocus autocomplete="off" required>
         <label class="check"><input type="checkbox" name="follow" {{ 'checked' if follow}}>Follow the bag to the next station</label>
         <button type="submit">SCAN</button>
     </form>
+    
 </div>
 
 {% endblock %}

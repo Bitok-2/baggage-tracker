@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+
+<h2 class="page-title">Reports</h2>
+<p class="subtitle">Filter the scan history and review the results.</p>
+
+<form method="GET" action="{{ url_for('reports') }}" class="card report-filters">
+    <div>
+        <label for="date_from">From</label>
+        <input type="date" id="date_from" name="date_from" value="{{ f.get('date_from', '') }}">
+
+    </div>
+    <div>
+        <label for="date_to">To</label>
+        <input type="date" id="date_to" name="date_to" value="{{ f.get('date_to', '') }}">
+    </div>
+    <div>
+        <label for="checkpoint">Checkpoint</label>
+        <select id="checkpoint" name="checkpoint">
+            <option value="">All</option>
+            {% for c in checkpoints %}
+            <option value="{{ c }}" {{ 'selected' if f.get('checkpoint') == c }}>{{ c }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="status">Status</label>
+        <select id="status" name="status">
+            <option value="">All</option>
+            {% for s in statuses %}
+            <option value="{{ s }}" {{ 'selected' if f.get('status') == s }}>{{ s }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit">GENERATE</button>
+</form>
+
+<div class="stats">
+    <div class="card stat">
+        <p class="stat-label">Scans in this report</p>
+        <p class="stat-num">{{ total }}</p>
+    </div>
+    <div class="card stat warn">
+        <p class="stat-label">Flagged events</p>
+        <p class="stat-num">{{ flagged_count }}</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="section-row">
+        <h3 class="section-title">Scan history</h3>
+        <a class="btn-export" href="{{ url_for('reports_export', date_from=f.get('date_from', ''), date_to=f.get('date_to', ''), checkpoint=f.get('checkpoint', ''), status=f.get('status', '')) }}">EXPORT CSV</a>
+    </div>
+    {% if rows %}
+    <table>
+        <thead>
+            <tr>
+                <th>Bag</th>
+                <th>Passenger</th>
+                <th>Checkpoint</th>
+                <th>Status</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for scan, bag in rows %}
+            <tr>
+                <td>{{ bag.reference_no }}</td>
+                <td>{{ bag.passenger_name }}</td>
+                <td>{{ scan.checkpoint }}</td>
+                <td><span class="badge {{ scan.status|lower|replace(' ', '-') }}">{{ scan.status }}</span></td>
+                <td>{{ scan.timestamp.strftime('%d %b %Y %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No scans match these filters.</p>
+    {% endif %}
+</div>
+
+{% endblock %}

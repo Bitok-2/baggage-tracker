@@ -7,10 +7,12 @@
     <p class="subtitle">Enter the reference number on your baggage receipt</p>
 
     <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label for="reference_no">Baggage reference number</label>
         <input type="text" id="reference_no" name="reference_no" autocomplete="off" required autofocus>
         <button type="submit">TRACK</button>
     </form>
+    
 </div>
 
 {% if searched %}
