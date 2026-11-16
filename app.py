@@ -16,6 +16,9 @@ load_dotenv()
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
 app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
+app.config["SESSION_COOKIE_HTTPONLY"] =True
+app.config["SESSION_COOKIE_SAMESITE"] ="Lax"
+app.config["PERMANENT_SESSION_LIFETIME"] =timedelta(minutes=30)
 db = SQLAlchemy(app)
 
 
@@ -143,6 +146,7 @@ def login():
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password_hash, password):
             session.clear()
+            session.permanent = True
             session["user_id"] = user.user_id
             session["name"] = user.name
             audit("LOGIN_SUCCESS", username)
@@ -413,3 +417,13 @@ def reports_export():
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment; filename=scan_report.csv"},
     )    
+
+
+@app.after_request
+def security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "same-origin"
+    if not request.path.startswith("/static"):
+        response.headers["Cache-Control"] = "no-store"
+    return response    
